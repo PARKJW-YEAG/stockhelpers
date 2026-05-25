@@ -426,7 +426,147 @@
         searchStock();
       }
     });
-  </script>
+  <script>
+  async function searchStock() {
+    const input = document.getElementById("stockInput").value.trim();
+    const result = document.getElementById("result");
 
-</body>
-</html>
+    if (input === "") {
+      result.innerHTML = `
+        <div class="empty">
+          검색어를 입력해주세요.
+        </div>
+      `;
+      return;
+    }
+
+    result.innerHTML = `
+      <div class="empty">
+        데이터를 불러오는 중입니다...
+      </div>
+    `;
+
+    try {
+      const response = await fetch(`/api/stock?query=${encodeURIComponent(input)}`);
+      const data = await response.json();
+
+      if (!data.ok) {
+        result.innerHTML = `
+          <div class="empty">
+            <strong>검색 결과를 가져오지 못했습니다.</strong><br><br>
+            ${data.message || "알 수 없는 오류가 발생했습니다."}
+          </div>
+        `;
+        return;
+      }
+
+      renderStock(data);
+
+    } catch (error) {
+      result.innerHTML = `
+        <div class="empty">
+          <strong>서버 연결 오류</strong><br><br>
+          데이터를 불러오는 중 문제가 발생했습니다.<br>
+          Render 서버가 정상 작동 중인지 확인해주세요.
+        </div>
+      `;
+      console.error(error);
+    }
+  }
+
+  function renderStock(data) {
+    const result = document.getElementById("result");
+
+    const company = data.company;
+    const metrics = data.metrics;
+    const diagnosis = data.diagnosis || [];
+    const financials = data.financials || [];
+
+    result.innerHTML = `
+      <div class="company-card">
+        <h2>${company.name}</h2>
+        <div class="company-info">
+          종목코드: ${company.code}<br>
+          시장: ${company.market}<br>
+          업종: ${company.sector}
+        </div>
+      </div>
+
+      <div class="metrics">
+        <div class="metric-card">
+          <div class="metric-title">PER</div>
+          <div class="metric-value">${metrics.per || "-"}</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-title">PBR</div>
+          <div class="metric-value">${metrics.pbr || "-"}</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-title">ROE</div>
+          <div class="metric-value">${metrics.roe || "-"}</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-title">부채비율</div>
+          <div class="metric-value">${metrics.debtRatio || "-"}</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-title">영업이익률</div>
+          <div class="metric-value">${metrics.operatingMargin || "-"}</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-title">순이익률</div>
+          <div class="metric-value">${metrics.netMargin || "-"}</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-title">배당수익률</div>
+          <div class="metric-value">${metrics.dividendYield || "-"}</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-title">데이터 상태</div>
+          <div class="metric-value">서버 연결</div>
+        </div>
+      </div>
+
+      <div class="analysis-card">
+        <h3>자동 진단 코멘트</h3>
+        <ul>
+          ${diagnosis.map(item => `<li>${item}</li>`).join("")}
+        </ul>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>연도</th>
+            <th>매출</th>
+            <th>영업이익</th>
+            <th>순이익</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${financials.map(row => `
+            <tr>
+              <td>${row.year}</td>
+              <td>${row.revenue}</td>
+              <td>${row.operatingProfit}</td>
+              <td>${row.netProfit}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+  }
+
+  document.getElementById("stockInput").addEventListener("keydown", function(event) {
+    if (event.key === "Enter") {
+      searchStock();
+    }
+  });
+</script>
