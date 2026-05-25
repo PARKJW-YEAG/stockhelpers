@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>주식 지표 진단 사이트</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, "Noto Sans KR", sans-serif;
+      background: #f4f6f8;
+      color: #111827;
+    }
+
+    header {
+      background: #111827;
+      color: white;
+      padding: 50px 20px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0 0 15px;
+      font-size: 36px;
+    }
+
+    header p {
+      margin: 0;
+      color: #d1d5db;
+      font-size: 16px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 30px 20px;
+    }
+
+    .search-box {
+      background: white;
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      margin-top: -55px;
+      display: flex;
+      gap: 10px;
+    }
+
+    input {
+      flex: 1;
+      padding: 15px;
+      font-size: 16px;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+    }
+
+    button {
+      padding: 15px 25px;
+      font-size: 16px;
+      font-weight: bold;
+      color: white;
+      background: #2563eb;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    .notice {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #6b7280;
+    }
+
+    .result {
+      margin-top: 30px;
+    }
+
+    .company-card {
+      background: white;
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
+
+    .company-card h2 {
+      margin: 0 0 10px;
+      font-size: 28px;
+    }
+
+    .company-info {
+      color: #6b7280;
+      line-height: 1.6;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .metric-card {
+      background: white;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+
+    .metric-title {
+      color: #6b7280;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .metric-value {
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .analysis-card {
+      background: white;
+      padding: 25px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
+
+    .analysis-card h3 {
+      margin-top: 0;
+    }
+
+    .analysis-card ul {
+      padding-left: 20px;
+      line-height: 1.8;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+
+    th, td {
+      padding: 15px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: center;
+    }
+
+    th {
+      background: #f9fafb;
+      color: #374151;
+    }
+
+    .empty {
+      background: white;
+      padding: 40px;
+      border-radius: 16px;
+      text-align: center;
+      color: #6b7280;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+
+    .warning {
+      margin-top: 30px;
+      font-size: 13px;
+      color: #6b7280;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 800px) {
+      .search-box {
+        flex-direction: column;
+      }
+
+      .metrics {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 500px) {
+      header h1 {
+        font-size: 28px;
+      }
+
+      .metrics {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>주식 매수 전 핵심 지표 진단</h1>
+    <p>종목명 또는 종목코드를 입력하면 주요 투자 지표를 확인할 수 있습니다.</p>
+  </header>
+
+  <div class="container">
+
+    <div class="search-box">
+      <input id="stockInput" type="text" placeholder="예: 삼성전자, 005930, NAVER, 035420, 테슬라, TSLA">
+      <button onclick="searchStock()">진단하기</button>
+    </div>
+
+    <p class="notice">
+      현재는 테스트용 예시 데이터입니다. 실제 OpenDART 데이터 연결은 다음 단계에서 진행합니다.
+    </p>
+
+    <div id="result" class="result">
+      <div class="empty">
+        검색어를 입력하면 이곳에 주식 지표가 표시됩니다.
+      </div>
+    </div>
+
+    <p class="warning">
+      ※ 이 사이트는 투자 추천 서비스가 아닙니다. 표시되는 정보는 투자 판단 참고용이며, 실제 투자 결정은 본인의 책임입니다.
+    </p>
+
+  </div>
+
+  <script>
+    const stocks = {
+      "005930": {
+        name: "삼성전자",
+        code: "005930",
+        market: "KOSPI",
+        sector: "반도체 / 전자",
+        per: "예시",
+        pbr: "예시",
+        roe: "4.1%",
+        debtRatio: "26.4%",
+        operatingMargin: "6.9%",
+        netMargin: "5.2%",
+        dividendYield: "예시",
+        diagnosis: [
+          "부채비율은 낮은 편으로 재무 안정성은 양호합니다.",
+          "최근 반도체 업황에 따라 실적 변동성이 커질 수 있습니다.",
+          "단순히 대형주라는 이유만으로 안전하다고 판단하면 안 됩니다."
+        ],
+        financials: [
+          { year: "2021", revenue: "279.6조", operatingProfit: "51.6조", netProfit: "39.9조" },
+          { year: "2022", revenue: "302.2조", operatingProfit: "43.4조", netProfit: "55.7조" },
+          { year: "2023", revenue: "258.9조", operatingProfit: "6.6조", netProfit: "15.5조" }
+        ]
+      },
+
+      "035420": {
+        name: "NAVER",
+        code: "035420",
+        market: "KOSPI",
+        sector: "인터넷 / 플랫폼",
+        per: "예시",
+        pbr: "예시",
+        roe: "5.8%",
+        debtRatio: "42.7%",
+        operatingMargin: "15.1%",
+        netMargin: "8.4%",
+        dividendYield: "예시",
+        diagnosis: [
+          "매출 성장 흐름은 유지되고 있습니다.",
+          "플랫폼 기업은 성장 기대가 낮아지면 주가가 크게 조정될 수 있습니다.",
+          "광고, 커머스, 콘텐츠, AI 사업을 분리해서 확인해야 합니다."
+        ],
+        financials: [
+          { year: "2021", revenue: "6.8조", operatingProfit: "1.3조", netProfit: "16.4조" },
+          { year: "2022", revenue: "8.2조", operatingProfit: "1.3조", netProfit: "0.7조" },
+          { year: "2023", revenue: "9.7조", operatingProfit: "1.5조", netProfit: "1.0조" }
+        ]
+      },
+
+      "TSLA": {
+        name: "Tesla",
+        code: "TSLA",
+        market: "NASDAQ",
+        sector: "전기차 / 에너지 / AI",
+        per: "예시",
+        pbr: "예시",
+        roe: "12.4%",
+        debtRatio: "18.7%",
+        operatingMargin: "8.2%",
+        netMargin: "7.9%",
+        dividendYield: "0%",
+        diagnosis: [
+          "성장주 성격이 강해 기대감 변화에 따라 주가 변동성이 큽니다.",
+          "전기차 가격 경쟁과 마진 하락 여부를 반드시 확인해야 합니다.",
+          "부채 부담은 상대적으로 낮은 편입니다."
+        ],
+        financials: [
+          { year: "2021", revenue: "$53.8B", operatingProfit: "$6.5B", netProfit: "$5.5B" },
+          { year: "2022", revenue: "$81.5B", operatingProfit: "$13.7B", netProfit: "$12.6B" },
+          { year: "2023", revenue: "$96.8B", operatingProfit: "$8.9B", netProfit: "$15.0B" }
+        ]
+      }
+    };
+
+    stocks["삼성전자"] = stocks["005930"];
+    stocks["NAVER"] = stocks["035420"];
+    stocks["네이버"] = stocks["035420"];
+    stocks["테슬라"] = stocks["TSLA"];
+
+    function searchStock() {
+      const input = document.getElementById("stockInput").value.trim();
+      const result = document.getElementById("result");
+
+      if (input === "") {
+        result.innerHTML = `
+          <div class="empty">
+            검색어를 입력해주세요.
+          </div>
+        `;
+        return;
+      }
+
+      const upperInput = input.toUpperCase();
+      const stock = stocks[input] || stocks[upperInput];
+
+      if (!stock) {
+        result.innerHTML = `
+          <div class="empty">
+            <strong>검색 결과가 없습니다.</strong><br><br>
+            현재 테스트 가능한 검색어는 다음과 같습니다.<br>
+            삼성전자, 005930, NAVER, 035420, 테슬라, TSLA
+          </div>
+        `;
+        return;
+      }
+
+      result.innerHTML = `
+        <div class="company-card">
+          <h2>${stock.name}</h2>
+          <div class="company-info">
+            종목코드: ${stock.code}<br>
+            시장: ${stock.market}<br>
+            업종: ${stock.sector}
+          </div>
+        </div>
+
+        <div class="metrics">
+          <div class="metric-card">
+            <div class="metric-title">PER</div>
+            <div class="metric-value">${stock.per}</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-title">PBR</div>
+            <div class="metric-value">${stock.pbr}</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-title">ROE</div>
+            <div class="metric-value">${stock.roe}</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-title">부채비율</div>
+            <div class="metric-value">${stock.debtRatio}</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-title">영업이익률</div>
+            <div class="metric-value">${stock.operatingMargin}</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-title">순이익률</div>
+            <div class="metric-value">${stock.netMargin}</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-title">배당수익률</div>
+            <div class="metric-value">${stock.dividendYield}</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-title">진단 상태</div>
+            <div class="metric-value">주의 확인</div>
+          </div>
+        </div>
+
+        <div class="analysis-card">
+          <h3>자동 진단 코멘트</h3>
+          <ul>
+            ${stock.diagnosis.map(item => `<li>${item}</li>`).join("")}
+          </ul>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>연도</th>
+              <th>매출</th>
+              <th>영업이익</th>
+              <th>순이익</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${stock.financials.map(row => `
+              <tr>
+                <td>${row.year}</td>
+                <td>${row.revenue}</td>
+                <td>${row.operatingProfit}</td>
+                <td>${row.netProfit}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    document.getElementById("stockInput").addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        searchStock();
+      }
+    });
+  </script>
+
+</body>
+</html>
