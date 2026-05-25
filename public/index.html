@@ -18,35 +18,37 @@
     }
 
     header {
-      background: #111827;
+      background: linear-gradient(135deg, #111827, #1e3a8a);
       color: white;
-      padding: 50px 20px;
+      padding: 56px 20px;
       text-align: center;
     }
 
     header h1 {
       margin: 0 0 15px;
-      font-size: 36px;
+      font-size: 38px;
+      letter-spacing: -1px;
     }
 
     header p {
       margin: 0;
       color: #d1d5db;
       font-size: 16px;
+      line-height: 1.6;
     }
 
     .container {
-      max-width: 1000px;
+      max-width: 1120px;
       margin: 0 auto;
-      padding: 30px 20px;
+      padding: 30px 20px 60px;
     }
 
     .search-box {
       background: white;
       padding: 25px;
-      border-radius: 16px;
+      border-radius: 18px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-      margin-top: -55px;
+      margin-top: -58px;
       display: flex;
       gap: 10px;
     }
@@ -56,17 +58,23 @@
       padding: 15px;
       font-size: 16px;
       border: 1px solid #d1d5db;
-      border-radius: 10px;
+      border-radius: 12px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
     }
 
     button {
-      padding: 15px 25px;
+      padding: 15px 26px;
       font-size: 16px;
       font-weight: bold;
       color: white;
       background: #2563eb;
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       cursor: pointer;
     }
 
@@ -78,28 +86,171 @@
       margin-top: 15px;
       font-size: 14px;
       color: #6b7280;
+      line-height: 1.6;
     }
 
     .result {
       margin-top: 30px;
     }
 
-    .company-card {
+    .company-card,
+    .score-card,
+    .analysis-card,
+    .table-card {
       background: white;
-      padding: 25px;
-      border-radius: 16px;
+      border-radius: 18px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.08);
       margin-bottom: 20px;
     }
 
+    .company-card {
+      padding: 26px;
+    }
+
+    .company-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+
     .company-card h2 {
       margin: 0 0 10px;
-      font-size: 28px;
+      font-size: 30px;
+      letter-spacing: -1px;
     }
 
     .company-info {
       color: #6b7280;
-      line-height: 1.6;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .source-box {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 14px;
+      min-width: 250px;
+      font-size: 13px;
+      color: #374151;
+      line-height: 1.7;
+    }
+
+    .warning-box {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 20px;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .score-card {
+      padding: 26px;
+    }
+
+    .score-header {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .score-main {
+      border-radius: 20px;
+      padding: 24px;
+      text-align: center;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+    }
+
+    .score-number {
+      font-size: 58px;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -2px;
+    }
+
+    .score-grade {
+      margin-top: 10px;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .score-risk {
+      margin-top: 6px;
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    .score-good {
+      color: #059669;
+    }
+
+    .score-normal {
+      color: #2563eb;
+    }
+
+    .score-warn {
+      color: #d97706;
+    }
+
+    .score-bad {
+      color: #dc2626;
+    }
+
+    .score-summary h3 {
+      margin: 0 0 10px;
+      font-size: 22px;
+    }
+
+    .score-summary p {
+      margin: 0;
+      color: #4b5563;
+      line-height: 1.7;
+    }
+
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-top: 22px;
+    }
+
+    .score-mini {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .score-mini-title {
+      color: #6b7280;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .score-mini-value {
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .score-bar {
+      height: 8px;
+      background: #e5e7eb;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+
+    .score-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: #2563eb;
     }
 
     .metrics {
@@ -112,8 +263,9 @@
     .metric-card {
       background: white;
       padding: 20px;
-      border-radius: 16px;
+      border-radius: 18px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      min-height: 112px;
     }
 
     .metric-title {
@@ -125,32 +277,46 @@
     .metric-value {
       font-size: 24px;
       font-weight: bold;
+      word-break: keep-all;
+    }
+
+    .metric-sub {
+      margin-top: 8px;
+      color: #9ca3af;
+      font-size: 12px;
+      line-height: 1.5;
     }
 
     .analysis-card {
-      background: white;
       padding: 25px;
-      border-radius: 16px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-      margin-bottom: 20px;
     }
 
     .analysis-card h3 {
       margin-top: 0;
+      font-size: 22px;
     }
 
     .analysis-card ul {
       padding-left: 20px;
-      line-height: 1.8;
+      line-height: 1.85;
+      margin-bottom: 0;
+    }
+
+    .table-card {
+      overflow: hidden;
+    }
+
+    .table-title {
+      padding: 20px 24px;
+      font-size: 20px;
+      font-weight: bold;
+      border-bottom: 1px solid #e5e7eb;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
       background: white;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
     }
 
     th, td {
@@ -162,42 +328,77 @@
     th {
       background: #f9fafb;
       color: #374151;
+      font-size: 14px;
+    }
+
+    td {
+      font-size: 14px;
     }
 
     .empty {
       background: white;
-      padding: 40px;
-      border-radius: 16px;
+      padding: 42px;
+      border-radius: 18px;
       text-align: center;
       color: #6b7280;
       box-shadow: 0 10px 30px rgba(0,0,0,0.08);
       line-height: 1.7;
     }
 
-    .warning {
+    .loading {
+      color: #2563eb;
+      font-weight: bold;
+    }
+
+    .footer-warning {
       margin-top: 30px;
       font-size: 13px;
       color: #6b7280;
-      line-height: 1.6;
+      line-height: 1.7;
     }
 
-    @media (max-width: 800px) {
-      .search-box {
+    @media (max-width: 900px) {
+      .metrics,
+      .score-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .company-top,
+      .score-header {
+        grid-template-columns: 1fr;
         flex-direction: column;
       }
 
-      .metrics {
-        grid-template-columns: repeat(2, 1fr);
+      .source-box {
+        width: 100%;
       }
     }
 
-    @media (max-width: 500px) {
+    @media (max-width: 600px) {
       header h1 {
         font-size: 28px;
       }
 
-      .metrics {
+      .search-box {
+        flex-direction: column;
+      }
+
+      button {
+        width: 100%;
+      }
+
+      .metrics,
+      .score-grid {
         grid-template-columns: 1fr;
+      }
+
+      .score-number {
+        font-size: 48px;
+      }
+
+      th, td {
+        padding: 12px 8px;
+        font-size: 13px;
       }
     }
   </style>
@@ -207,18 +408,21 @@
 
   <header>
     <h1>주식 매수 전 핵심 지표 진단</h1>
-    <p>종목명 또는 종목코드를 입력하면 주요 투자 지표를 확인할 수 있습니다.</p>
+    <p>
+      종목명 또는 종목코드를 입력하면 재무제표 기반 지표, 시세 기반 지표, 자동 진단 점수를 함께 확인할 수 있습니다.
+    </p>
   </header>
 
   <div class="container">
 
     <div class="search-box">
-      <input id="stockInput" type="text" placeholder="예: 삼성전자, 005930">
+      <input id="stockInput" type="text" placeholder="예: 삼성전자, 005930, NAVER, 035420, TSLA">
       <button type="button" onclick="searchStock()">진단하기</button>
     </div>
 
     <p class="notice">
-      현재는 Render 서버 API와 연결된 테스트 버전입니다. 실제 OpenDART 데이터 연결은 다음 단계에서 진행합니다.
+      현재는 OpenDART 재무제표 데이터와 Yahoo Finance 공개 시세 데이터를 활용한 MVP 테스트 버전입니다.
+      실서비스에서는 공식 시세 API로 교체하는 것이 안전합니다.
     </p>
 
     <div id="result" class="result">
@@ -227,8 +431,9 @@
       </div>
     </div>
 
-    <p class="warning">
+    <p class="footer-warning">
       ※ 이 사이트는 투자 추천 서비스가 아닙니다. 표시되는 정보는 투자 판단 참고용이며, 실제 투자 결정은 본인의 책임입니다.
+      데이터는 지연되거나 부정확할 수 있으므로 실제 매수 전에는 공시, 증권사 데이터, 사업보고서를 반드시 재확인해야 합니다.
     </p>
 
   </div>
@@ -241,7 +446,8 @@
       if (input === "") {
         result.innerHTML = `
           <div class="empty">
-            검색어를 입력해주세요.
+            검색어를 입력해주세요.<br>
+            예: 삼성전자, 005930, NAVER, TSLA
           </div>
         `;
         return;
@@ -249,21 +455,28 @@
 
       result.innerHTML = `
         <div class="empty">
-          데이터를 불러오는 중입니다...<br>
-          입력값: ${input}
+          <span class="loading">데이터를 불러오는 중입니다...</span><br>
+          입력값: ${escapeHtml(input)}
         </div>
       `;
 
       try {
         const apiUrl = "/api/stock?query=" + encodeURIComponent(input);
         const response = await fetch(apiUrl);
+
+        const contentType = response.headers.get("content-type") || "";
+
+        if (!contentType.includes("application/json")) {
+          throw new Error("서버가 JSON이 아닌 응답을 반환했습니다.");
+        }
+
         const data = await response.json();
 
         if (!data.ok) {
           result.innerHTML = `
             <div class="empty">
               <strong>검색 결과를 가져오지 못했습니다.</strong><br><br>
-              ${data.message || "알 수 없는 오류가 발생했습니다."}
+              ${escapeHtml(data.message || "알 수 없는 오류가 발생했습니다.")}
             </div>
           `;
           return;
@@ -278,7 +491,8 @@
           <div class="empty">
             <strong>서버 연결 오류</strong><br><br>
             버튼은 작동했지만 서버 데이터를 불러오지 못했습니다.<br>
-            /api/stock 주소가 정상 작동하는지 확인해주세요.
+            /api/stock 주소가 정상 작동하는지 확인해주세요.<br><br>
+            오류 내용: ${escapeHtml(error.message)}
           </div>
         `;
       }
@@ -291,56 +505,92 @@
       const metrics = data.metrics || {};
       const diagnosis = data.diagnosis || [];
       const financials = data.financials || [];
+      const dataBasis = data.dataBasis || {};
+      const scoring = data.scoring || null;
+
+      const warningHtml = data.warning
+        ? `
+          <div class="warning-box">
+            <strong>주의:</strong> ${escapeHtml(data.warning)}
+          </div>
+        `
+        : "";
 
       result.innerHTML = `
+        ${warningHtml}
+
         <div class="company-card">
-          <h2>${company.name || "-"}</h2>
-          <div class="company-info">
-            종목코드: ${company.code || "-"}<br>
-            시장: ${company.market || "-"}<br>
-            업종: ${company.sector || "-"}
+          <div class="company-top">
+            <div>
+              <h2>${escapeHtml(company.name || "-")}</h2>
+              <div class="company-info">
+                종목코드: ${escapeHtml(company.code || "-")}<br>
+                시장: ${escapeHtml(company.market || "-")}<br>
+                업종: ${escapeHtml(company.sector || "-")}<br>
+                기업 고유번호: ${escapeHtml(company.corpCode || "-")}
+              </div>
+            </div>
+
+            <div class="source-box">
+              <strong>데이터 출처</strong><br>
+              ${escapeHtml(data.source || "-")}<br><br>
+              <strong>재무 기준</strong><br>
+              기준연도: ${escapeHtml(dataBasis.year || "-")}<br>
+              보고서: ${escapeHtml(dataBasis.reportName || "-")}<br>
+              재무제표: ${escapeHtml(dataBasis.fsDiv || "-")}
+            </div>
           </div>
         </div>
 
+        ${renderScoring(scoring)}
+
         <div class="metrics">
           <div class="metric-card">
+            <div class="metric-title">현재가</div>
+            <div class="metric-value">${escapeHtml(metrics.currentPrice || "-")}</div>
+            <div class="metric-sub">시세 데이터 기준</div>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-title">시가총액</div>
+            <div class="metric-value">${escapeHtml(metrics.marketCap || "-")}</div>
+            <div class="metric-sub">시세 데이터 기준</div>
+          </div>
+
+          <div class="metric-card">
             <div class="metric-title">PER</div>
-            <div class="metric-value">${metrics.per || "-"}</div>
+            <div class="metric-value">${escapeHtml(metrics.per || "-")}</div>
+            <div class="metric-sub">주가 / 주당순이익</div>
           </div>
 
           <div class="metric-card">
             <div class="metric-title">PBR</div>
-            <div class="metric-value">${metrics.pbr || "-"}</div>
+            <div class="metric-value">${escapeHtml(metrics.pbr || "-")}</div>
+            <div class="metric-sub">주가 / 주당순자산</div>
           </div>
 
           <div class="metric-card">
             <div class="metric-title">ROE</div>
-            <div class="metric-value">${metrics.roe || "-"}</div>
+            <div class="metric-value">${escapeHtml(metrics.roe || "-")}</div>
+            <div class="metric-sub">순이익 / 자본</div>
           </div>
 
           <div class="metric-card">
             <div class="metric-title">부채비율</div>
-            <div class="metric-value">${metrics.debtRatio || "-"}</div>
+            <div class="metric-value">${escapeHtml(metrics.debtRatio || "-")}</div>
+            <div class="metric-sub">부채 / 자본</div>
           </div>
 
           <div class="metric-card">
             <div class="metric-title">영업이익률</div>
-            <div class="metric-value">${metrics.operatingMargin || "-"}</div>
-          </div>
-
-          <div class="metric-card">
-            <div class="metric-title">순이익률</div>
-            <div class="metric-value">${metrics.netMargin || "-"}</div>
+            <div class="metric-value">${escapeHtml(metrics.operatingMargin || "-")}</div>
+            <div class="metric-sub">영업이익 / 매출</div>
           </div>
 
           <div class="metric-card">
             <div class="metric-title">배당수익률</div>
-            <div class="metric-value">${metrics.dividendYield || "-"}</div>
-          </div>
-
-          <div class="metric-card">
-            <div class="metric-title">데이터 상태</div>
-            <div class="metric-value">서버 연결</div>
+            <div class="metric-value">${escapeHtml(metrics.dividendYield || "-")}</div>
+            <div class="metric-sub">배당 / 주가</div>
           </div>
         </div>
 
@@ -349,41 +599,116 @@
           <ul>
             ${
               diagnosis.length > 0
-                ? diagnosis.map(item => `<li>${item}</li>`).join("")
+                ? diagnosis.map(item => `<li>${escapeHtml(item)}</li>`).join("")
                 : "<li>진단 코멘트가 없습니다.</li>"
             }
           </ul>
         </div>
 
-        <table>
-          <thead>
-            <tr>
-              <th>연도</th>
-              <th>매출</th>
-              <th>영업이익</th>
-              <th>순이익</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${
-              financials.length > 0
-                ? financials.map(row => `
-                    <tr>
-                      <td>${row.year || "-"}</td>
-                      <td>${row.revenue || "-"}</td>
-                      <td>${row.operatingProfit || "-"}</td>
-                      <td>${row.netProfit || "-"}</td>
-                    </tr>
-                  `).join("")
-                : `
-                    <tr>
-                      <td colspan="4">재무 데이터가 없습니다.</td>
-                    </tr>
-                  `
-            }
-          </tbody>
-        </table>
+        <div class="table-card">
+          <div class="table-title">최근 재무 데이터</div>
+          <table>
+            <thead>
+              <tr>
+                <th>연도</th>
+                <th>재무제표</th>
+                <th>매출</th>
+                <th>영업이익</th>
+                <th>순이익</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${
+                financials.length > 0
+                  ? financials.map(row => `
+                      <tr>
+                        <td>${escapeHtml(row.year || "-")}</td>
+                        <td>${escapeHtml(row.fsDiv || "-")}</td>
+                        <td>${escapeHtml(row.revenue || "-")}</td>
+                        <td>${escapeHtml(row.operatingProfit || "-")}</td>
+                        <td>${escapeHtml(row.netProfit || "-")}</td>
+                      </tr>
+                    `).join("")
+                  : `
+                      <tr>
+                        <td colspan="5">재무 데이터가 없습니다.</td>
+                      </tr>
+                    `
+              }
+            </tbody>
+          </table>
+        </div>
       `;
+    }
+
+    function renderScoring(scoring) {
+      if (!scoring) {
+        return "";
+      }
+
+      const scoreClass = getScoreClass(scoring.total);
+      const categories = scoring.categories || {};
+
+      return `
+        <div class="score-card">
+          <div class="score-header">
+            <div class="score-main">
+              <div class="score-number ${scoreClass}">${escapeHtml(scoring.total || "-")}</div>
+              <div class="score-grade">등급 ${escapeHtml(scoring.grade || "-")}</div>
+              <div class="score-risk">위험도: ${escapeHtml(scoring.riskLevel || "-")}</div>
+            </div>
+
+            <div class="score-summary">
+              <h3>종합 진단 점수</h3>
+              <p>${escapeHtml(scoring.summary || "진단 요약이 없습니다.")}</p>
+            </div>
+          </div>
+
+          <div class="score-grid">
+            ${renderScoreMini(categories.profitability)}
+            ${renderScoreMini(categories.stability)}
+            ${renderScoreMini(categories.growth)}
+            ${renderScoreMini(categories.valuation)}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderScoreMini(item) {
+      if (!item) {
+        return "";
+      }
+
+      const score = Number(item.score || 0);
+      const width = Math.max(0, Math.min(100, score));
+
+      return `
+        <div class="score-mini">
+          <div class="score-mini-title">${escapeHtml(item.label || "-")}</div>
+          <div class="score-mini-value ${getScoreClass(score)}">${escapeHtml(score)}</div>
+          <div class="score-bar">
+            <div class="score-bar-fill" style="width: ${width}%;"></div>
+          </div>
+        </div>
+      `;
+    }
+
+    function getScoreClass(score) {
+      const number = Number(score);
+
+      if (number >= 80) return "score-good";
+      if (number >= 65) return "score-normal";
+      if (number >= 50) return "score-warn";
+      return "score-bad";
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
     }
 
     document.getElementById("stockInput").addEventListener("keydown", function(event) {
