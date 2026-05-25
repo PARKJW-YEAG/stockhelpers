@@ -4,7 +4,6 @@ const path = require("path");
 const axios = require("axios");
 const AdmZip = require("adm-zip");
 const { parseStringPromise } = require("xml2js");
-const yahooFinance = require("yahoo-finance2").default;
 require("dotenv").config();
 
 const app = express();
@@ -69,7 +68,9 @@ function toNumber(value) {
 }
 
 function formatWon(value) {
-  if (value === null || value === undefined || !Number.isFinite(value)) return "-";
+  if (value === null || value === undefined || !Number.isFinite(value)) {
+    return "-";
+  }
 
   const abs = Math.abs(value);
   const sign = value < 0 ? "-" : "";
@@ -134,7 +135,10 @@ function formatMarketMoney(value, currency) {
 }
 
 function divide(a, b) {
-  if (!Number.isFinite(a) || !Number.isFinite(b) || b === 0) return null;
+  if (!Number.isFinite(a) || !Number.isFinite(b) || b === 0) {
+    return null;
+  }
+
   return a / b;
 }
 
@@ -270,7 +274,11 @@ async function fetchFinancialStatement(corpCode) {
 
       const data = response.data;
 
-      if (data.status === "000" && Array.isArray(data.list) && data.list.length > 0) {
+      if (
+        data.status === "000" &&
+        Array.isArray(data.list) &&
+        data.list.length > 0
+      ) {
         const result = {
           year,
           fsDiv,
@@ -410,7 +418,7 @@ function makeDiagnosis(calculated, marketData) {
 
   if (marketData && marketData.display) {
     diagnosis.push(
-      "현재가, 시가총액, PER, PBR은 Yahoo Finance 기반 테스트 데이터입니다. 실서비스에서는 공식 시세 API로 교체하는 것이 안전합니다."
+      "현재가, 시가총액, PER, PBR은 Yahoo Finance 공개 데이터를 기반으로 조회한 테스트 데이터입니다. 실서비스에서는 공식 시세 API로 교체하는 것이 안전합니다."
     );
   } else {
     diagnosis.push(
@@ -447,20 +455,34 @@ async function fetchMarketData(stockCodeOrTicker) {
 
   for (const symbol of candidates) {
     try {
-      const result = await yahooFinance.quoteSummary(symbol, {
-        modules: ["price", "summaryDetail", "defaultKeyStatistics"]
-      });
+      const response = await axios.get(
+        "https://query1.finance.yahoo.com/v7/finance/quote",
+        {
+          params: {
+            symbols: symbol
+          },
+          timeout: 15000,
+          headers: {
+            "User-Agent": "Mozilla/5.0"
+          }
+        }
+      );
 
-      const price = result.price || {};
-      const summaryDetail = result.summaryDetail || {};
-      const defaultKeyStatistics = result.defaultKeyStatistics || {};
+      const result = response.data?.quoteResponse?.result?.[0];
 
-      const currentPrice = toNumber(price.regularMarketPrice);
-      const currency = price.currency || null;
-      const marketCap = toNumber(price.marketCap) || toNumber(summaryDetail.marketCap);
-      const per = toNumber(summaryDetail.trailingPE) || toNumber(defaultKeyStatistics.trailingPE);
-      const pbr = toNumber(defaultKeyStatistics.priceToBook);
-      const dividendYieldRaw = toNumber(summaryDetail.dividendYield);
+      if (!result) {
+        continue;
+      }
+
+      const currentPrice = toNumber(result.regularMarketPrice);
+      const currency = result.currency || null;
+      const marketCap = toNumber(result.marketCap);
+      const per = toNumber(result.trailingPE);
+      const pbr = toNumber(result.priceToBook);
+
+      const dividendYieldRaw =
+        toNumber(result.trailingAnnualDividendYield) ||
+        toNumber(result.dividendYield);
 
       return {
         symbol,
@@ -483,11 +505,15 @@ async function fetchMarketData(stockCodeOrTicker) {
           per: per === null ? "-" : formatNumber(per, 2),
           pbr: pbr === null ? "-" : formatNumber(pbr, 2),
           dividendYield:
-            dividendYieldRaw === null ? "-" : (dividendYieldRaw * 100).toFixed(2) + "%"
+            dividendYieldRaw === null
+              ? "-"
+              : dividendYieldRaw > 1
+                ? dividendYieldRaw.toFixed(2) + "%"
+                : (dividendYieldRaw * 100).toFixed(2) + "%"
         }
       };
     } catch (error) {
-      console.log("Yahoo Finance 조회 실패:", symbol, error.message);
+      console.log("Yahoo Finance 직접 조회 실패:", symbol, error.message);
     }
   }
 
@@ -524,7 +550,7 @@ app.get("/api/market", async function (req, res) {
 
     return res.json({
       ok: true,
-      source: "Yahoo Finance via yahoo-finance2",
+      source: "Yahoo Finance direct quote endpoint",
       ...marketData
     });
   } catch (error) {
@@ -563,10 +589,10 @@ app.get("/api/stock", async function (req, res) {
       if (marketData) {
         return res.json({
           ok: true,
-          source: "Yahoo Finance",
+          source: "Yahoo Finance direct quote endpoint",
           dataBasis: {
             year: "-",
-            reportName: "해외 또는 비상장 OpenDART 미지원 종목",
+            reportName: "해외 또는 OpenDART 미지원 종목",
             fsDiv: "-"
           },
           company: {
@@ -588,7 +614,7 @@ app.get("/api/stock", async function (req, res) {
             dividendYield: marketData.display.dividendYield
           },
           diagnosis: [
-            "이 종목은 OpenDART 재무제표 조회 대상이 아니거나, 종목명/종목코드 매칭에 실패했습니다.",
+            "이 종목은 OpenDART 재무제표 조회 대상이 아니거나 종목명/종목코드 매칭에 실패했습니다.",
             "현재가, 시가총액, PER, PBR 등 시세 기반 지표만 표시합니다.",
             "해외주식의 재무제표까지 분석하려면 SEC 또는 별도 해외주식 데이터 API 연결이 필요합니다."
           ],
@@ -625,7 +651,7 @@ app.get("/api/stock", async function (req, res) {
     return res.json({
       ok: true,
       source: marketData
-        ? "OpenDART + Yahoo Finance via yahoo-finance2"
+        ? "OpenDART + Yahoo Finance direct quote endpoint"
         : "OpenDART",
       dataBasis: {
         year: statement.year,
