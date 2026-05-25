@@ -4,6 +4,7 @@ const path = require("path");
 const axios = require("axios");
 const AdmZip = require("adm-zip");
 const { parseStringPromise } = require("xml2js");
+const yahooFinance = require("yahoo-finance2").default;
 require("dotenv").config();
 
 const app = express();
@@ -16,6 +17,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 let corpListCache = null;
 let corpListFetchedAt = 0;
+const financeCache = new Map();
 
 const REPORT_CODE = {
   ANNUAL: "11011"
@@ -30,19 +32,44 @@ function checkApiKey() {
 function cleanNumber(value) {
   if (value === undefined || value === null) return null;
 
-  const text = String(value)
+  let text = String(value)
     .replace(/,/g, "")
     .replace(/\s/g, "")
-    .replace(/-/g, "");
+    .trim();
 
-  if (!text) return null;
+  if (!text || text === "-") return null;
+
+  let isNegativeByParentheses = false;
+
+  if (text.startsWith("(") && text.endsWith(")")) {
+    isNegativeByParentheses = true;
+    text = text.replace(/[()]/g, "");
+  }
 
   const number = Number(text);
+
+  if (!Number.isFinite(number)) return null;
+
+  return isNegativeByParentheses ? -number : number;
+}
+
+function toNumber(value) {
+  if (value === undefined || value === null) return null;
+
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  if (typeof value === "object" && value.raw !== undefined) {
+    return toNumber(value.raw);
+  }
+
+  const number = Number(String(value).replace(/,/g, "").trim());
   return Number.isFinite(number) ? number : null;
 }
 
 function formatWon(value) {
-  if (value === null || value === undefined) return "-";
+  if (value === null || value === undefined || !Number.isFinite(value)) return "-";
 
   const abs = Math.abs(value);
   const sign = value < 0 ? "-" : "";
@@ -64,6 +91,46 @@ function formatPercent(value) {
   }
 
   return value.toFixed(1) + "%";
+}
+
+function formatNumber(value, digits = 2) {
+  if (value === null || value === undefined || !Number.isFinite(value)) {
+    return "-";
+  }
+
+  return Number(value).toLocaleString("ko-KR", {
+    maximumFractionDigits: digits
+  });
+}
+
+function formatMarketMoney(value, currency) {
+  if (value === null || value === undefined || !Number.isFinite(value)) {
+    return "-";
+  }
+
+  if (currency === "KRW") {
+    return formatWon(value);
+  }
+
+  if (currency === "USD") {
+    const abs = Math.abs(value);
+
+    if (abs >= 1000000000000) {
+      return "$" + (abs / 1000000000000).toFixed(2) + "T";
+    }
+
+    if (abs >= 1000000000) {
+      return "$" + (abs / 1000000000).toFixed(2) + "B";
+    }
+
+    if (abs >= 1000000) {
+      return "$" + (abs / 1000000).toFixed(2) + "M";
+    }
+
+    return "$" + value.toLocaleString("en-US");
+  }
+
+  return value.toLocaleString("ko-KR") + " " + (currency || "");
 }
 
 function divide(a, b) {
@@ -114,6 +181,7 @@ async function loadCorpList() {
 
   const zip = new AdmZip(response.data);
   const entries = zip.getEntries();
+
   const corpCodeFile = entries.find((entry) =>
     entry.entryName.toLowerCase().includes("corpcode")
   );
@@ -123,6 +191,7 @@ async function loadCorpList() {
   }
 
   const xml = corpCodeFile.getData().toString("utf8");
+
   const parsed = await parseStringPromise(xml, {
     explicitArray: false,
     trim: true
@@ -167,7 +236,6 @@ async function fetchFinancialStatement(corpCode) {
   checkApiKey();
 
   const currentYear = new Date().getFullYear();
-
   const years = [
     currentYear - 1,
     currentYear - 2,
@@ -178,6 +246,14 @@ async function fetchFinancialStatement(corpCode) {
 
   for (const year of years) {
     for (const fsDiv of ["CFS", "OFS"]) {
+      const cacheKey = `${corpCode}:${year}:${fsDiv}`;
+
+      if (financeCache.has(cacheKey)) {
+        const cached = financeCache.get(cacheKey);
+        if (cached) return cached;
+        continue;
+      }
+
       const response = await axios.get(
         "https://opendart.fss.or.kr/api/fnlttSinglAcntAll.json",
         {
@@ -195,12 +271,17 @@ async function fetchFinancialStatement(corpCode) {
       const data = response.data;
 
       if (data.status === "000" && Array.isArray(data.list) && data.list.length > 0) {
-        return {
+        const result = {
           year,
           fsDiv,
           rows: data.list
         };
+
+        financeCache.set(cacheKey, result);
+        return result;
       }
+
+      financeCache.set(cacheKey, null);
     }
   }
 
@@ -274,13 +355,12 @@ function extractMetrics(rows) {
       equity
     },
     metrics: {
-      per: "시세 API 필요",
-      pbr: "시세 API 필요",
       roe: formatPercent(roeRaw === null ? null : roeRaw * 100),
       debtRatio: formatPercent(debtRatioRaw === null ? null : debtRatioRaw * 100),
-      operatingMargin: formatPercent(operatingMarginRaw === null ? null : operatingMarginRaw * 100),
-      netMargin: formatPercent(netMarginRaw === null ? null : netMarginRaw * 100),
-      dividendYield: "시세 API 필요"
+      operatingMargin: formatPercent(
+        operatingMarginRaw === null ? null : operatingMarginRaw * 100
+      ),
+      netMargin: formatPercent(netMarginRaw === null ? null : netMarginRaw * 100)
     },
     calculated: {
       roe: roeRaw === null ? null : roeRaw * 100,
@@ -291,7 +371,7 @@ function extractMetrics(rows) {
   };
 }
 
-function makeDiagnosis(calculated) {
+function makeDiagnosis(calculated, marketData) {
   const diagnosis = [];
 
   if (calculated.roe === null) {
@@ -328,7 +408,15 @@ function makeDiagnosis(calculated) {
     diagnosis.push("영업손실 상태입니다. 흑자 전환 가능성을 보수적으로 봐야 합니다.");
   }
 
-  diagnosis.push("현재 PER, PBR, 배당수익률은 OpenDART만으로 계산하기 어렵습니다. 다음 단계에서 시세 API를 연결해야 합니다.");
+  if (marketData && marketData.display) {
+    diagnosis.push(
+      "현재가, 시가총액, PER, PBR은 Yahoo Finance 기반 테스트 데이터입니다. 실서비스에서는 공식 시세 API로 교체하는 것이 안전합니다."
+    );
+  } else {
+    diagnosis.push(
+      "현재가, 시가총액, PER, PBR을 가져오지 못했습니다. 시세 데이터 소스 확인이 필요합니다."
+    );
+  }
 
   return diagnosis;
 }
@@ -344,12 +432,109 @@ function makeFinancials(year, raw) {
   ];
 }
 
+function makeYahooSymbolCandidates(stockCodeOrTicker) {
+  const input = String(stockCodeOrTicker).trim().toUpperCase();
+
+  if (/^[0-9]{6}$/.test(input)) {
+    return [input + ".KS", input + ".KQ"];
+  }
+
+  return [input];
+}
+
+async function fetchMarketData(stockCodeOrTicker) {
+  const candidates = makeYahooSymbolCandidates(stockCodeOrTicker);
+
+  for (const symbol of candidates) {
+    try {
+      const result = await yahooFinance.quoteSummary(symbol, {
+        modules: ["price", "summaryDetail", "defaultKeyStatistics"]
+      });
+
+      const price = result.price || {};
+      const summaryDetail = result.summaryDetail || {};
+      const defaultKeyStatistics = result.defaultKeyStatistics || {};
+
+      const currentPrice = toNumber(price.regularMarketPrice);
+      const currency = price.currency || null;
+      const marketCap = toNumber(price.marketCap) || toNumber(summaryDetail.marketCap);
+      const per = toNumber(summaryDetail.trailingPE) || toNumber(defaultKeyStatistics.trailingPE);
+      const pbr = toNumber(defaultKeyStatistics.priceToBook);
+      const dividendYieldRaw = toNumber(summaryDetail.dividendYield);
+
+      return {
+        symbol,
+        currency,
+        raw: {
+          currentPrice,
+          marketCap,
+          per,
+          pbr,
+          dividendYield: dividendYieldRaw
+        },
+        display: {
+          currentPrice:
+            currentPrice === null
+              ? "-"
+              : currency === "KRW"
+                ? currentPrice.toLocaleString("ko-KR") + "원"
+                : formatMarketMoney(currentPrice, currency),
+          marketCap: formatMarketMoney(marketCap, currency),
+          per: per === null ? "-" : formatNumber(per, 2),
+          pbr: pbr === null ? "-" : formatNumber(pbr, 2),
+          dividendYield:
+            dividendYieldRaw === null ? "-" : (dividendYieldRaw * 100).toFixed(2) + "%"
+        }
+      };
+    } catch (error) {
+      console.log("Yahoo Finance 조회 실패:", symbol, error.message);
+    }
+  }
+
+  return null;
+}
+
 app.get("/api/health", function (req, res) {
   res.json({
     ok: true,
     message: "server is running",
     opendartKey: OPENDART_API_KEY ? "connected" : "missing"
   });
+});
+
+app.get("/api/market", async function (req, res) {
+  try {
+    const query = req.query.query;
+
+    if (!query) {
+      return res.status(400).json({
+        ok: false,
+        message: "검색어가 없습니다. 예: /api/market?query=005930"
+      });
+    }
+
+    const marketData = await fetchMarketData(query);
+
+    if (!marketData) {
+      return res.status(404).json({
+        ok: false,
+        message: "시세 데이터를 찾지 못했습니다. 종목코드 또는 티커를 확인해주세요."
+      });
+    }
+
+    return res.json({
+      ok: true,
+      source: "Yahoo Finance via yahoo-finance2",
+      ...marketData
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      ok: false,
+      message: error.message || "시세 조회 중 서버 오류가 발생했습니다."
+    });
+  }
 });
 
 app.get("/api/stock", async function (req, res) {
@@ -363,14 +548,66 @@ app.get("/api/stock", async function (req, res) {
       });
     }
 
+    let marketData = null;
+
+    try {
+      marketData = await fetchMarketData(query);
+    } catch (error) {
+      console.log("시세 데이터 조회 실패:", error.message);
+    }
+
     const corpList = await loadCorpList();
     const company = findCompany(corpList, query);
 
     if (!company) {
+      if (marketData) {
+        return res.json({
+          ok: true,
+          source: "Yahoo Finance",
+          dataBasis: {
+            year: "-",
+            reportName: "해외 또는 비상장 OpenDART 미지원 종목",
+            fsDiv: "-"
+          },
+          company: {
+            name: marketData.symbol,
+            code: marketData.symbol,
+            corpCode: "-",
+            market: marketData.currency || "-",
+            sector: "OpenDART 미지원"
+          },
+          metrics: {
+            currentPrice: marketData.display.currentPrice,
+            marketCap: marketData.display.marketCap,
+            per: marketData.display.per,
+            pbr: marketData.display.pbr,
+            roe: "-",
+            debtRatio: "-",
+            operatingMargin: "-",
+            netMargin: "-",
+            dividendYield: marketData.display.dividendYield
+          },
+          diagnosis: [
+            "이 종목은 OpenDART 재무제표 조회 대상이 아니거나, 종목명/종목코드 매칭에 실패했습니다.",
+            "현재가, 시가총액, PER, PBR 등 시세 기반 지표만 표시합니다.",
+            "해외주식의 재무제표까지 분석하려면 SEC 또는 별도 해외주식 데이터 API 연결이 필요합니다."
+          ],
+          financials: []
+        });
+      }
+
       return res.status(404).json({
         ok: false,
         message: "해당 종목을 찾지 못했습니다. 종목명 또는 6자리 종목코드를 다시 확인해주세요."
       });
+    }
+
+    if (!marketData) {
+      try {
+        marketData = await fetchMarketData(company.stockCode);
+      } catch (error) {
+        console.log("종목코드 기반 시세 데이터 조회 실패:", error.message);
+      }
     }
 
     const statement = await fetchFinancialStatement(company.corpCode);
@@ -383,11 +620,13 @@ app.get("/api/stock", async function (req, res) {
     }
 
     const extracted = extractMetrics(statement.rows);
-    const diagnosis = makeDiagnosis(extracted.calculated);
+    const diagnosis = makeDiagnosis(extracted.calculated, marketData);
 
     return res.json({
       ok: true,
-      source: "OpenDART",
+      source: marketData
+        ? "OpenDART + Yahoo Finance via yahoo-finance2"
+        : "OpenDART",
       dataBasis: {
         year: statement.year,
         reportName: "사업보고서",
@@ -400,7 +639,17 @@ app.get("/api/stock", async function (req, res) {
         market: "KRX",
         sector: "OpenDART 추가 항목 필요"
       },
-      metrics: extracted.metrics,
+      metrics: {
+        currentPrice: marketData ? marketData.display.currentPrice : "-",
+        marketCap: marketData ? marketData.display.marketCap : "-",
+        per: marketData ? marketData.display.per : "-",
+        pbr: marketData ? marketData.display.pbr : "-",
+        roe: extracted.metrics.roe,
+        debtRatio: extracted.metrics.debtRatio,
+        operatingMargin: extracted.metrics.operatingMargin,
+        netMargin: extracted.metrics.netMargin,
+        dividendYield: marketData ? marketData.display.dividendYield : "-"
+      },
       diagnosis,
       financials: makeFinancials(statement.year, extracted.raw)
     });
