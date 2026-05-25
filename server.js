@@ -22,10 +22,8 @@ const REPORT_CODE = {
   ANNUAL: "11011"
 };
 
-function checkApiKey() {
-  if (!OPENDART_API_KEY) {
-    throw new Error("OPENDART_API_KEY가 Render 환경변수에 없습니다.");
-  }
+function hasOpenDartKey() {
+  return Boolean(OPENDART_API_KEY && OPENDART_API_KEY.trim() !== "");
 }
 
 function cleanNumber(value) {
@@ -167,7 +165,9 @@ function findAccount(rows, keywords) {
 }
 
 async function loadCorpList() {
-  checkApiKey();
+  if (!hasOpenDartKey()) {
+    throw new Error("OPENDART_API_KEY가 Render 환경변수에 없습니다.");
+  }
 
   const oneDay = 24 * 60 * 60 * 1000;
 
@@ -237,7 +237,9 @@ function findCompany(corpList, query) {
 }
 
 async function fetchFinancialStatement(corpCode) {
-  checkApiKey();
+  if (!hasOpenDartKey()) {
+    throw new Error("OPENDART_API_KEY가 Render 환경변수에 없습니다.");
+  }
 
   const currentYear = new Date().getFullYear();
   const years = [
@@ -520,11 +522,56 @@ async function fetchMarketData(stockCodeOrTicker) {
   return null;
 }
 
+function makeFallbackStockResponse(query, reason) {
+  return {
+    ok: true,
+    source: "Fallback test data",
+    warning: reason || "실제 데이터 조회에 실패하여 테스트 데이터를 표시합니다.",
+    dataBasis: {
+      year: "테스트",
+      reportName: "테스트 데이터",
+      fsDiv: "테스트"
+    },
+    company: {
+      name: String(query).toUpperCase() === "TSLA" ? "Tesla" : "삼성전자",
+      code: String(query).toUpperCase() === "TSLA" ? "TSLA" : "005930",
+      corpCode: "-",
+      market: String(query).toUpperCase() === "TSLA" ? "NASDAQ" : "KRX",
+      sector: "테스트 데이터"
+    },
+    metrics: {
+      currentPrice: "-",
+      marketCap: "-",
+      per: "-",
+      pbr: "-",
+      roe: "4.1%",
+      debtRatio: "26.4%",
+      operatingMargin: "6.9%",
+      netMargin: "5.2%",
+      dividendYield: "-"
+    },
+    diagnosis: [
+      "서버는 정상 응답했지만 실제 데이터 조회에 실패했습니다.",
+      reason || "Render 환경변수, OpenDART 인증키, 외부 API 연결 상태를 확인해야 합니다.",
+      "이 화면은 서버 연결 유지용 임시 테스트 데이터입니다."
+    ],
+    financials: [
+      {
+        year: "2023",
+        revenue: "258.9조",
+        operatingProfit: "6.6조",
+        netProfit: "15.5조"
+      }
+    ]
+  };
+}
+
 app.get("/api/health", function (req, res) {
   res.json({
     ok: true,
     message: "server is running",
-    opendartKey: OPENDART_API_KEY ? "connected" : "missing"
+    opendartKey: hasOpenDartKey() ? "connected" : "missing",
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -542,9 +589,10 @@ app.get("/api/market", async function (req, res) {
     const marketData = await fetchMarketData(query);
 
     if (!marketData) {
-      return res.status(404).json({
+      return res.status(200).json({
         ok: false,
-        message: "시세 데이터를 찾지 못했습니다. 종목코드 또는 티커를 확인해주세요."
+        message: "시세 데이터를 찾지 못했습니다. 종목코드 또는 티커를 확인해주세요.",
+        query
       });
     }
 
@@ -556,7 +604,7 @@ app.get("/api/market", async function (req, res) {
   } catch (error) {
     console.error(error);
 
-    return res.status(500).json({
+    return res.status(200).json({
       ok: false,
       message: error.message || "시세 조회 중 서버 오류가 발생했습니다."
     });
@@ -564,22 +612,31 @@ app.get("/api/market", async function (req, res) {
 });
 
 app.get("/api/stock", async function (req, res) {
+  const query = req.query.query;
+
+  if (!query) {
+    return res.status(400).json({
+      ok: false,
+      message: "검색어가 없습니다. 예: /api/stock?query=005930"
+    });
+  }
+
   try {
-    const query = req.query.query;
-
-    if (!query) {
-      return res.status(400).json({
-        ok: false,
-        message: "검색어가 없습니다. 예: /api/stock?query=005930"
-      });
-    }
-
     let marketData = null;
 
     try {
       marketData = await fetchMarketData(query);
     } catch (error) {
       console.log("시세 데이터 조회 실패:", error.message);
+    }
+
+    if (!hasOpenDartKey()) {
+      return res.json(
+        makeFallbackStockResponse(
+          query,
+          "OPENDART_API_KEY가 Render 환경변수에 없습니다. Render의 Environment에서 인증키를 추가해야 실제 재무제표가 표시됩니다."
+        )
+      );
     }
 
     const corpList = await loadCorpList();
@@ -622,10 +679,12 @@ app.get("/api/stock", async function (req, res) {
         });
       }
 
-      return res.status(404).json({
-        ok: false,
-        message: "해당 종목을 찾지 못했습니다. 종목명 또는 6자리 종목코드를 다시 확인해주세요."
-      });
+      return res.json(
+        makeFallbackStockResponse(
+          query,
+          "OpenDART에서 해당 종목을 찾지 못했습니다. 종목명 또는 6자리 종목코드를 다시 확인해야 합니다."
+        )
+      );
     }
 
     if (!marketData) {
@@ -639,10 +698,12 @@ app.get("/api/stock", async function (req, res) {
     const statement = await fetchFinancialStatement(company.corpCode);
 
     if (!statement) {
-      return res.status(404).json({
-        ok: false,
-        message: "최근 5년 내 사업보고서 재무제표 데이터를 찾지 못했습니다."
-      });
+      return res.json(
+        makeFallbackStockResponse(
+          query,
+          "최근 5년 내 사업보고서 재무제표 데이터를 찾지 못했습니다."
+        )
+      );
     }
 
     const extracted = extractMetrics(statement.rows);
@@ -680,12 +741,14 @@ app.get("/api/stock", async function (req, res) {
       financials: makeFinancials(statement.year, extracted.raw)
     });
   } catch (error) {
-    console.error(error);
+    console.error("API STOCK ERROR:", error);
 
-    return res.status(500).json({
-      ok: false,
-      message: error.message || "서버 오류가 발생했습니다."
-    });
+    return res.json(
+      makeFallbackStockResponse(
+        query,
+        error.message || "서버 내부 오류가 발생했습니다."
+      )
+    );
   }
 });
 
